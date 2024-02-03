@@ -30,4 +30,5 @@ I was able to expand on this study quite a bit due to improvements to the Switch
 - Traffic light output for better error handling
 - Expanding upon workflow packaging (including attached Pitstop actions, preflight profiles, variable sets, etc)
 - Cleaning up logging
+- Specified workflow exports (based on "Mark Flow" in flows panel or based on flow description)
 
