@@ -48,10 +48,6 @@ async function jobArrived(s, flowElement, job) {
             for (let i = dirs.length - 1; i >= 0; i--) {
                 exdir = exdir + "/" + dirs[i];
             }
-            // await job.log(LogLevel.Warning, exdir)
-        }
-        else {
-            // await job.log(LogLevel.Warning, "Root")
         }
         mk.mkdirSync(exdir, { recursive: true });
         let thefile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
@@ -64,17 +60,13 @@ async function jobArrived(s, flowElement, job) {
                     await job.log(LogLevel.Warning, "Deleting old version: Flow_" + flowid + "_" + flowname + "_v" + i + ".sflow");
                     await fs.unlink(exdir + "/Flow_" + flowid + "_" + flowname + "_v" + i + ".sflow");
                 }
-                else { }
             }
             const output = await mk.createWriteStream(thefile);
             const archive = archiver('zip', {});
             output.on('close', async function () {
-                // console.log(archive.pointer() + 'total bytes')
-                // console.log("Archived: " + thefile)
                 await job.log(LogLevel.Info, "Archived: " + thefile);
             });
             output.on('end', async function () {
-                // console.log("Data complete")
                 await job.log(LogLevel.Info, "Data Complete");
             });
             await archive.pipe(output);
@@ -87,7 +79,6 @@ async function jobArrived(s, flowElement, job) {
                 }
                 else {
                     for (let i = 0; i < object.length; i++) {
-                        // console.log(object[i].firstChild.data)
                         let fullPath = object[i].firstChild.data;
                         filename = fullPath.replace(/^.*[\\/]/, '');
                         let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="${filename}" Path="${fullPath}"/>`;
@@ -98,30 +89,30 @@ async function jobArrived(s, flowElement, job) {
                 let Propertysets1 = `<PropertySets>${propsets}</PropertySets>`;
                 let Propertysets = Propertysets1.replace(/>,</g, "><");
                 manifest = `<Manifest>
-<ProductInfo>Switch Version 23</ProductInfo>
-<ExportFormatVersion>1.0</ExportFormatVersion>
-<FlowFile>flow.xml</FlowFile>
-<SwitchFlavour>Switch</SwitchFlavour>
-<SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
-<SwitchReleaseType></SwitchReleaseType>
-<SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
-<SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
-<OperatingSystem>Windows</OperatingSystem>
-${Propertysets}
-</Manifest>`;
+        <ProductInfo>Switch Version 23</ProductInfo>
+        <ExportFormatVersion>1.0</ExportFormatVersion>
+        <FlowFile>flow.xml</FlowFile>
+        <SwitchFlavour>Switch</SwitchFlavour>
+        <SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
+        <SwitchReleaseType></SwitchReleaseType>
+        <SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
+        <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
+        <OperatingSystem>Windows</OperatingSystem>
+        ${Propertysets}
+        </Manifest>`;
             }
             else {
                 manifest = `<Manifest>
-<ProductInfo>Switch Version 23</ProductInfo>
-<ExportFormatVersion>1.0</ExportFormatVersion>
-<FlowFile>flow.xml</FlowFile>
-<SwitchFlavour>Switch</SwitchFlavour>
-<SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
-<SwitchReleaseType></SwitchReleaseType>
-<SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
-<SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
-<OperatingSystem>Windows</OperatingSystem>
-</Manifest>`;
+        <ProductInfo>Switch Version 23</ProductInfo>
+        <ExportFormatVersion>1.0</ExportFormatVersion>
+        <FlowFile>flow.xml</FlowFile>
+        <SwitchFlavour>Switch</SwitchFlavour>
+        <SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
+        <SwitchReleaseType></SwitchReleaseType>
+        <SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
+        <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
+        <OperatingSystem>Windows</OperatingSystem>
+        </Manifest>`;
             }
             await job.log(LogLevel.Warning, manifest);
             await archive.append(flowxmlconvert, { name: "flow.xml" });
