@@ -1,5 +1,7 @@
 "use strict";
 const xpath = require('xpath');
+const { tmpdir } = require('node:os');
+// const tmp = require('tmp')
 const dom = require('@xmldom/xmldom').DOMParser;
 const fs = require('fs/promises');
 const mk = require('fs');
@@ -7,6 +9,7 @@ const iconv = require('iconv-lite');
 const path = require('path');
 const archiver = require('archiver');
 async function jobArrived(s, flowElement, job) {
+    let flowlist = [];
     let flowpane = await flowElement.getPropertyStringValue("FlowPane");
     let flowxmls = await flowElement.getPropertyStringValue("flowxmls");
     let exportder = await flowElement.getPropertyStringValue("exportdir");
@@ -30,7 +33,7 @@ async function jobArrived(s, flowElement, job) {
             let nodes = xpath.select1(query, flowpanedoc).value;
             let dirs = [];
             dirs.push(nodes);
-            for (let i = 0; i < 100; i++) {
+            while (nodes != undefined) {
                 if (nodes != undefined) {
                     try {
                         let nodes1 = xpath.select1(query + "/../../@Name", flowpanedoc).value;
@@ -51,6 +54,7 @@ async function jobArrived(s, flowElement, job) {
         }
         mk.mkdirSync(exdir, { recursive: true });
         let thefile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
+        let tempfile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
         if (mk.existsSync(thefile)) {
             await job.log(LogLevel.Info, thefile + " Alerady exists, not backing up");
         }
@@ -61,34 +65,54 @@ async function jobArrived(s, flowElement, job) {
                     await fs.unlink(exdir + "/Flow_" + flowid + "_" + flowname + "_v" + i + ".sflow");
                 }
             }
-            const output = await mk.createWriteStream(thefile);
-            const archive = archiver('zip', {});
-            output.on('close', async function () {
-                await job.log(LogLevel.Info, "Archived: " + thefile);
-            });
-            output.on('end', async function () {
-                await job.log(LogLevel.Info, "Data Complete");
-            });
-            await archive.pipe(output);
-            let manifest;
-            if (packages == "Yes") {
-                let propsets = [];
-                let filename;
-                if (object.length == 0) {
-                    propsets = "";
-                }
-                else {
-                    for (let i = 0; i < object.length; i++) {
-                        let fullPath = object[i].firstChild.data;
-                        filename = fullPath.replace(/^.*[\\/]/, '');
-                        let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="${filename}" Path="${fullPath}"/>`;
-                        await archive.file(fullPath, { name: filename });
-                        propsets.push(intopro);
+            // const tempdir = await tmpdir();
+            // await job.log(LogLevel.Warning, tempdir)   
+            // let tempfile = tempdir.name+"/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
+            // let tempfile = tempdir+"\\Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
+            // const output = await mk.createWriteStream(thefile)
+            async function archive() {
+                const output = await mk.createWriteStream(tempfile);
+                const archive = archiver('zip', {});
+                await flowlist.push(thefile);
+                await output.on('close', async function () {
+                    await job.log(LogLevel.Info, "Archived: " + thefile);
+                    // try{
+                    // let tmpfilepath = tempfile.replace(/\\/g,"/")
+                    // flowlist.push(tmpfilepath)
+                    // // let tmpfilepath2 = tmpfilepath.replace("ENFOCU~1", "enfocus0cv")
+                    // // await job.log(LogLevel.Warning, "tempdir " + tmpfilepath2)
+                    // let subjob = await flowElement.createJob(tmpfilepath)
+                    // await subjob.sendToSingle()
+                    // mk.unlinkSync(tmpfilepath)
+                    // return "success"
+                    // }catch(error:any){
+                    //     await flowElement.log(LogLevel.Error, error.message + " " + thefile )
+                    //     return "error"
+                    // }
+                });
+                output.on('end', async function () {
+                    await job.log(LogLevel.Info, "Data Complete");
+                });
+                await archive.pipe(output);
+                let manifest;
+                if (packages == "Yes") {
+                    let propsets = [];
+                    let filename;
+                    if (object.length == 0) {
+                        propsets = "";
                     }
-                }
-                let Propertysets1 = `<PropertySets>${propsets}</PropertySets>`;
-                let Propertysets = Propertysets1.replace(/>,</g, "><");
-                manifest = `<Manifest>
+                    else {
+                        for (let i = 0; i < object.length; i++) {
+                            let fullPath = object[i].firstChild.data;
+                            filename = fullPath.replace(/^.*[\\/]/, '');
+                            let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="${filename}" Path="${fullPath}"/>`;
+                            await archive.file(fullPath, { name: filename });
+                            propsets.push(intopro);
+                        }
+                    }
+                    let Propertysets1 = `<PropertySets>${propsets}</PropertySets>`;
+                    let Propertysets = Propertysets1.replace(/>,</g, "><");
+                    manifest = `<Manifest>
         <ProductInfo>Switch Version 23</ProductInfo>
         <ExportFormatVersion>1.0</ExportFormatVersion>
         <FlowFile>flow.xml</FlowFile>
@@ -100,9 +124,9 @@ async function jobArrived(s, flowElement, job) {
         <OperatingSystem>Windows</OperatingSystem>
         ${Propertysets}
         </Manifest>`;
-            }
-            else {
-                manifest = `<Manifest>
+                }
+                else {
+                    manifest = `<Manifest>
         <ProductInfo>Switch Version 23</ProductInfo>
         <ExportFormatVersion>1.0</ExportFormatVersion>
         <FlowFile>flow.xml</FlowFile>
@@ -113,13 +137,19 @@ async function jobArrived(s, flowElement, job) {
         <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
         <OperatingSystem>Windows</OperatingSystem>
         </Manifest>`;
+                }
+                // await job.log(LogLevel.Warning, manifest)
+                await archive.append(flowxmlconvert, { name: "flow.xml" });
+                await archive.append(manifest, { name: "manifest.xml" });
+                await archive.finalize();
             }
-            await job.log(LogLevel.Warning, manifest);
-            await archive.append(flowxmlconvert, { name: "flow.xml" });
-            await archive.append(manifest, { name: "manifest.xml" });
-            await archive.finalize();
+            let archived = await archive();
+            // await job.log(LogLevel.Info, archived)
         }
     }
+    // await EnfocusSwitchPrivateDataTag.hierarchy("")
+    await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + "DIRLENGTH: " + dir.length);
+    await job.setPrivateData("EnfocusSwitch.hierarchy", "C:/Temp");
     await job.sendToSingle();
 }
 //# sourceMappingURL=main.js.map

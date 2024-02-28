@@ -1,4 +1,6 @@
 const xpath = require('xpath')
+const { tmpdir } = require('node:os')
+// const tmp = require('tmp')
 const dom = require('@xmldom/xmldom').DOMParser
 const fs = require('fs/promises')
 const mk = require('fs')
@@ -6,6 +8,7 @@ const iconv = require('iconv-lite')
 const path = require('path')
 const archiver = require('archiver')
 async function jobArrived(s: Switch, flowElement: FlowElement, job: Job) {
+    let flowlist:any = []
     let flowpane:any = await flowElement.getPropertyStringValue("FlowPane")
     let flowxmls:any = await flowElement.getPropertyStringValue("flowxmls")
     let exportder:any = await flowElement.getPropertyStringValue("exportdir")
@@ -29,7 +32,7 @@ for (let i = 0;i<dir.length;i++){
         let nodes = xpath.select1(query, flowpanedoc).value
         let dirs:any = []
         dirs.push(nodes)    
-        for (let i=0; i<100;i++){
+        while (nodes != undefined){
             if (nodes != undefined){
             try{
                 let nodes1 = xpath.select1(query+"/../../@Name", flowpanedoc).value
@@ -48,6 +51,7 @@ for (let i = 0;i<dir.length;i++){
     }
 mk.mkdirSync(exdir, {recursive:true})
 let thefile = exdir+"/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
+let tempfile = exdir+"/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
 if(mk.existsSync(thefile)){
     await job.log(LogLevel.Info, thefile + " Alerady exists, not backing up")
 }else{
@@ -56,11 +60,33 @@ if(mk.existsSync(thefile)){
         await job.log(LogLevel.Warning, "Deleting old version: Flow_" + flowid + "_" + flowname + "_v" + i+ ".sflow")
         await fs.unlink(exdir+"/Flow_" + flowid + "_" + flowname + "_v" + i+ ".sflow")
         }
-    }   
-    const output = await mk.createWriteStream(thefile)
+    }
+    // const tempdir = await tmpdir();
+    // await job.log(LogLevel.Warning, tempdir)   
+    // let tempfile = tempdir.name+"/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
+    // let tempfile = tempdir+"\\Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
+    // const output = await mk.createWriteStream(thefile)
+    async function archive(){
+    const output = await mk.createWriteStream(tempfile)
     const archive = archiver('zip', {})
-    output.on('close', async function() {
+    await flowlist.push(thefile)
+    await output.on('close', async function() {
         await job.log(LogLevel.Info, "Archived: " + thefile)
+        
+
+                // try{
+                // let tmpfilepath = tempfile.replace(/\\/g,"/")
+                // flowlist.push(tmpfilepath)
+                // // let tmpfilepath2 = tmpfilepath.replace("ENFOCU~1", "enfocus0cv")
+                // // await job.log(LogLevel.Warning, "tempdir " + tmpfilepath2)
+                // let subjob = await flowElement.createJob(tmpfilepath)
+                // await subjob.sendToSingle()
+                // mk.unlinkSync(tmpfilepath)
+                // return "success"
+                // }catch(error:any){
+                //     await flowElement.log(LogLevel.Error, error.message + " " + thefile )
+                //     return "error"
+                // }
     })
     output.on('end', async function() {
         await job.log(LogLevel.Info, "Data Complete")
@@ -108,11 +134,17 @@ if(mk.existsSync(thefile)){
         <OperatingSystem>Windows</OperatingSystem>
         </Manifest>`;
     }
-    await job.log(LogLevel.Warning, manifest)
+    // await job.log(LogLevel.Warning, manifest)
     await archive.append(flowxmlconvert, {name:"flow.xml"})
     await archive.append(manifest,{name:"manifest.xml"})
     await archive.finalize();
+}
+let archived:any = await archive()
+// await job.log(LogLevel.Info, archived)
 }}
+// await EnfocusSwitchPrivateDataTag.hierarchy("")
+await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + "DIRLENGTH: " + dir.length)
+await job.setPrivateData("EnfocusSwitch.hierarchy", "C:/Temp")
 await job.sendToSingle();
 }
 

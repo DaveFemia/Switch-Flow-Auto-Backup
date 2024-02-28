@@ -4,6 +4,7 @@
         "archiver": "^6.0.1",
         "iconv-lite": "^0.6.3",
         "path": "^0.12.7",
+        "tmp": "^0.2.1",
         "xpath": "^0.0.34"
     },
     "devDependencies": {
