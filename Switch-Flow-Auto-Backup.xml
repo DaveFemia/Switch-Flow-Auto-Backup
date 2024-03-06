@@ -32,6 +32,7 @@
         <FlowPane Default="" DetailedInfo="" Editor="choosefile" LocalizedTagName="flowsPaneLayout xml" Subtype="" Tooltip="" Type="string" UserDefined="true" Validation="Standard"></FlowPane>
         <exportdir Default="" DetailedInfo="" Editor="choosefolder" LocalizedTagName="Export Directory" Subtype="" Tooltip="" Type="string" UserDefined="true" Validation="Standard"></exportdir>
         <packages Default="" DetailedInfo="" Editor="inline" LocalizedTagName="Package Scripts" Subtype="" Tooltip="" Type="enum:Yes;No" UserDefined="true" Validation="Standard"></packages>
+        <Output Default="" DetailedInfo="" Editor="inline" LocalizedTagName="Output" Subtype="" Tooltip="" Type="enum:Save backups to export directory;Output backups into flow;Both " UserDefined="true" Validation="Standard"></Output>
     </ElementFields>
     <ConnectionFields/>
     <ExtraProperties/>

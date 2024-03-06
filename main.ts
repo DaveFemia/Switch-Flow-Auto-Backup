@@ -8,8 +8,10 @@ const iconv = require('iconv-lite')
 const path = require('path')
 const archiver = require('archiver')
 async function jobArrived(s: Switch, flowElement: FlowElement, job: Job) {
+    
     let flowlist:any = []
     let flowpane:any = await flowElement.getPropertyStringValue("FlowPane")
+    let outputprop:any = await flowElement.getPropertyStringValue("Output")
     let flowxmls:any = await flowElement.getPropertyStringValue("flowxmls")
     let exportder:any = await flowElement.getPropertyStringValue("exportdir")
     let packages:any = await flowElement.getPropertyStringValue("packages")
@@ -48,8 +50,10 @@ for (let i = 0;i<dir.length;i++){
         for (let i = dirs.length-1;i>=0;i--){
             exdir = exdir + "/" + dirs[i]
         }
+        // await job.log(LogLevel.Warning, "Heirarch" + dirs)
     }
 mk.mkdirSync(exdir, {recursive:true})
+
 let thefile = exdir+"/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
 let tempfile = exdir+"/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
 if(mk.existsSync(thefile)){
@@ -144,6 +148,18 @@ let archived:any = await archive()
 }}
 // await EnfocusSwitchPrivateDataTag.hierarchy("")
 await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + "DIRLENGTH: " + dir.length)
+//"Save backups to export directory""Output backups into flow""Both"
+if(outputprop == "Output backups into flow" || outputprop == "Both"){
+    await job.log(LogLevel.Warning, "TEST INSIDE BOTH")
+    for(let i = 0; i<flowlist.length;i++){
+        let newlocation = flowlist[i]
+        let subjob = await flowElement.createJob(newlocation)
+        await subjob.sendToSingle()
+        if(outputprop == "Output backups into flow"){
+            mk.unlinkSync(newlocation)
+        }
+    }
+}
 await job.setPrivateData("EnfocusSwitch.hierarchy", "C:/Temp")
 await job.sendToSingle();
 }
