@@ -149,7 +149,8 @@ let archived:any = await archive()
 // await EnfocusSwitchPrivateDataTag.hierarchy("")
 await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + "DIRLENGTH: " + dir.length)
 //"Save backups to export directory""Output backups into flow""Both"
-if(outputprop == "Output backups into flow" || outputprop == "Both"){
+await job.log(LogLevel.Warning, "OUTPUT PROP " + outputprop)
+if(outputprop == "Both" || outputprop == "Output backups into flow"){
     await job.log(LogLevel.Warning, "TEST INSIDE BOTH")
     for(let i = 0; i<flowlist.length;i++){
         let newlocation = flowlist[i]
