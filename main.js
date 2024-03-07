@@ -1,7 +1,6 @@
 "use strict";
 const xpath = require('xpath');
 const { tmpdir } = require('node:os');
-// const tmp = require('tmp')
 const dom = require('@xmldom/xmldom').DOMParser;
 const fs = require('fs/promises');
 const mk = require('fs');
@@ -52,7 +51,6 @@ async function jobArrived(s, flowElement, job) {
             for (let i = dirs.length - 1; i >= 0; i--) {
                 exdir = exdir + "/" + dirs[i];
             }
-            // await job.log(LogLevel.Warning, "Heirarch" + dirs)
         }
         mk.mkdirSync(exdir, { recursive: true });
         let thefile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
@@ -67,30 +65,12 @@ async function jobArrived(s, flowElement, job) {
                     await fs.unlink(exdir + "/Flow_" + flowid + "_" + flowname + "_v" + i + ".sflow");
                 }
             }
-            // const tempdir = await tmpdir();
-            // await job.log(LogLevel.Warning, tempdir)   
-            // let tempfile = tempdir.name+"/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
-            // let tempfile = tempdir+"\\Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow"
-            // const output = await mk.createWriteStream(thefile)
             async function archive() {
                 const output = await mk.createWriteStream(tempfile);
                 const archive = archiver('zip', {});
                 await flowlist.push(thefile);
                 await output.on('close', async function () {
                     await job.log(LogLevel.Info, "Archived: " + thefile);
-                    // try{
-                    // let tmpfilepath = tempfile.replace(/\\/g,"/")
-                    // flowlist.push(tmpfilepath)
-                    // // let tmpfilepath2 = tmpfilepath.replace("ENFOCU~1", "enfocus0cv")
-                    // // await job.log(LogLevel.Warning, "tempdir " + tmpfilepath2)
-                    // let subjob = await flowElement.createJob(tmpfilepath)
-                    // await subjob.sendToSingle()
-                    // mk.unlinkSync(tmpfilepath)
-                    // return "success"
-                    // }catch(error:any){
-                    //     await flowElement.log(LogLevel.Error, error.message + " " + thefile )
-                    //     return "error"
-                    // }
                 });
                 output.on('end', async function () {
                     await job.log(LogLevel.Info, "Data Complete");
@@ -115,41 +95,38 @@ async function jobArrived(s, flowElement, job) {
                     let Propertysets1 = `<PropertySets>${propsets}</PropertySets>`;
                     let Propertysets = Propertysets1.replace(/>,</g, "><");
                     manifest = `<Manifest>
-        <ProductInfo>Switch Version 23</ProductInfo>
-        <ExportFormatVersion>1.0</ExportFormatVersion>
-        <FlowFile>flow.xml</FlowFile>
-        <SwitchFlavour>Switch</SwitchFlavour>
-        <SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
-        <SwitchReleaseType></SwitchReleaseType>
-        <SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
-        <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
-        <OperatingSystem>Windows</OperatingSystem>
-        ${Propertysets}
-        </Manifest>`;
+                <ProductInfo>Switch Version 23</ProductInfo>
+                <ExportFormatVersion>1.0</ExportFormatVersion>
+                <FlowFile>flow.xml</FlowFile>
+                <SwitchFlavour>Switch</SwitchFlavour>
+                <SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
+                <SwitchReleaseType></SwitchReleaseType>
+                <SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
+                <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
+                <OperatingSystem>Windows</OperatingSystem>
+                ${Propertysets}
+                </Manifest>`;
                 }
                 else {
                     manifest = `<Manifest>
-        <ProductInfo>Switch Version 23</ProductInfo>
-        <ExportFormatVersion>1.0</ExportFormatVersion>
-        <FlowFile>flow.xml</FlowFile>
-        <SwitchFlavour>Switch</SwitchFlavour>
-        <SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
-        <SwitchReleaseType></SwitchReleaseType>
-        <SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
-        <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
-        <OperatingSystem>Windows</OperatingSystem>
-        </Manifest>`;
+                <ProductInfo>Switch Version 23</ProductInfo>
+                <ExportFormatVersion>1.0</ExportFormatVersion>
+                <FlowFile>flow.xml</FlowFile>
+                <SwitchFlavour>Switch</SwitchFlavour>
+                <SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
+                <SwitchReleaseType></SwitchReleaseType>
+                <SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
+                <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
+                <OperatingSystem>Windows</OperatingSystem>
+                </Manifest>`;
                 }
-                // await job.log(LogLevel.Warning, manifest)
                 await archive.append(flowxmlconvert, { name: "flow.xml" });
                 await archive.append(manifest, { name: "manifest.xml" });
                 await archive.finalize();
             }
             let archived = await archive();
-            // await job.log(LogLevel.Info, archived)
         }
     }
-    // await EnfocusSwitchPrivateDataTag.hierarchy("")
     await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + "DIRLENGTH: " + dir.length);
     //"Save backups to export directory""Output backups into flow""Both"
     await job.log(LogLevel.Warning, "OUTPUT PROP " + outputprop);
