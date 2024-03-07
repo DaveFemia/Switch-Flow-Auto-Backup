@@ -9,6 +9,8 @@ const path = require('path');
 const archiver = require('archiver');
 async function jobArrived(s, flowElement, job) {
     let flowlist = [];
+    let heirarchy = [];
+    // let dirs:any = []
     let flowpane = await flowElement.getPropertyStringValue("FlowPane");
     let outputprop = await flowElement.getPropertyStringValue("Output");
     let flowxmls = await flowElement.getPropertyStringValue("flowxmls");
@@ -69,6 +71,7 @@ async function jobArrived(s, flowElement, job) {
                 const output = await mk.createWriteStream(tempfile);
                 const archive = archiver('zip', {});
                 await flowlist.push(thefile);
+                // await heirarchy.push(dirs)
                 await output.on('close', async function () {
                     await job.log(LogLevel.Info, "Archived: " + thefile);
                 });
@@ -135,6 +138,7 @@ async function jobArrived(s, flowElement, job) {
         for (let i = 0; i < flowlist.length; i++) {
             let newlocation = flowlist[i];
             let subjob = await flowElement.createJob(newlocation);
+            // await subjob.setPrivateData("EnfocusSwitch.hierarachy", heirarchy[i])
             await subjob.sendToSingle();
             if (outputprop == "Output backups into flow") {
                 mk.unlinkSync(newlocation);
