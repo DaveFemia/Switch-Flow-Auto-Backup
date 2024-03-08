@@ -9,6 +9,7 @@ const archiver = require('archiver')
 async function jobArrived(s: Switch, flowElement: FlowElement, job: Job) {
     let flowlist:any = []
     let heirarchy:any = []
+    let thehierarchy:any
     // let dirs:any = []
     let flowpane:any = await flowElement.getPropertyStringValue("FlowPane")
     let outputprop:any = await flowElement.getPropertyStringValue("Output")
@@ -19,6 +20,7 @@ async function jobArrived(s: Switch, flowElement: FlowElement, job: Job) {
     let flowpanexml = await fs.readFile(flowpane)
     let flowpanexmlconvert = await iconv.decode(flowpanexml, 'utf-8')
     let flowpanedoc = await new dom().parseFromString(flowpanexmlconvert, 'text/xml')
+    //loop through flows directory
     for (let i = 0;i<dir.length;i++){
         let xmlfile:any = await fs.readFile(flowxmls + "/" + dir[i])
         let flowxmlconvert:any = await iconv.decode(xmlfile, 'utf-8')
@@ -30,6 +32,7 @@ async function jobArrived(s: Switch, flowElement: FlowElement, job: Job) {
         let flow = "Flow=" + flowid
         let query = "//Group[" + flow + "]/@Name"
         let exdir:any = exportder
+        //archive hierarchy
         if (xpath.select1(query, flowpanedoc) != undefined){
             let nodes = xpath.select1(query, flowpanedoc).value
             let dirs:any = []
@@ -49,6 +52,8 @@ async function jobArrived(s: Switch, flowElement: FlowElement, job: Job) {
         }
         for (let i = dirs.length-1;i>=0;i--){
             exdir = exdir + "/" + dirs[i]
+            // thehierarchy = thehierarchy + "," + dirs[i]
+            // heirarchy.push(dirs[i])
         }
         }
         mk.mkdirSync(exdir, {recursive:true})
@@ -63,6 +68,7 @@ async function jobArrived(s: Switch, flowElement: FlowElement, job: Job) {
                 await fs.unlink(exdir+"/Flow_" + flowid + "_" + flowname + "_v" + i+ ".sflow")
                 }
             }
+            heirarchy.push(exdir)
             async function archive(){
             const output = await mk.createWriteStream(tempfile)
             const archive = archiver('zip', {})
@@ -132,15 +138,24 @@ async function jobArrived(s: Switch, flowElement: FlowElement, job: Job) {
         for(let i = 0; i<flowlist.length;i++){
             let newlocation = flowlist[i]
             let subjob = await flowElement.createJob(newlocation)
-            // await subjob.setPrivateData("EnfocusSwitch.hierarachy", heirarchy[i])
+            //remove exportder
+            let heirarchyremoveexportder = heirarchy[i].replace(exportder+"/","")
+            let heirarchyreplaceslash
+            if (heirarchyremoveexportder == exportder){
+                heirarchyreplaceslash = ""
+            } else {
+                heirarchyreplaceslash = heirarchyremoveexportder.replace(/\//g,";")
+            }
+            await job.log(LogLevel.Warning, "HIERARCHY: " + heirarchyreplaceslash)
+            await subjob.setPrivateData("EnfocusSwitch.hierarchy", heirarchyreplaceslash)
             await subjob.sendToSingle()
             if(outputprop == "Output backups into flow"){
                 mk.unlinkSync(newlocation)
             }
         }
     }
-    await job.setPrivateData("EnfocusSwitch.hierarchy", "C:/Temp")
-    await job.sendToSingle();
+    // await job.setPrivateData("EnfocusSwitch.hierarchy", "C:/Temp")
+    await job.sendToNull()
 }
 
 
