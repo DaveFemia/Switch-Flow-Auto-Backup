@@ -28,6 +28,22 @@ async function jobArrived(s, flowElement, job) {
         let flowdoc = await new dom().parseFromString(flowxmlconvert, 'text/xml');
         let flowid = xpath.select1("//Data/@Id", flowdoc).value;
         let flowversion = xpath.select("//Version", flowdoc)[0].firstChild.data;
+        let Switchversionroot = xpath.select1("//Version/@ModifiedBySwitch", flowdoc).value;
+        await job.log(LogLevel.Warning, "SwitchVersion: " + Switchversionroot);
+        let SwitchVersionArray = Switchversionroot.split(".");
+        let SwitchVersionNumber = SwitchVersionArray[0];
+        let SwitchVersionUpdateNumber = SwitchVersionArray[1];
+        while (SwitchVersionUpdateNumber.length != 3) {
+            SwitchVersionUpdateNumber = SwitchVersionUpdateNumber + "0";
+        }
+        let platform = process.platform;
+        let OperatingSystem;
+        if (platform == "darwin") {
+            OperatingSystem = "Mac";
+        }
+        else {
+            OperatingSystem = "Windows";
+        }
         let flowname = xpath.select("//FlowFolder", flowdoc)[0].firstChild.data;
         let object = xpath.select("//ScriptPackagePath", flowdoc);
         let flow = "Flow=" + flowid;
@@ -59,9 +75,20 @@ async function jobArrived(s, flowElement, job) {
                 // heirarchy.push(dirs[i])
             }
         }
-        mk.mkdirSync(exdir, { recursive: true });
-        let thefile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
-        let tempfile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
+        if (mk.existsSync(exdir) || outputprop == "Output backups into flow") {
+        }
+        else {
+            mk.mkdirSync(exdir, { recursive: true });
+        }
+        let thefile, tempfile;
+        if (outputprop == "Output backups into flow") {
+            thefile = exportder + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
+            tempfile = exportder + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
+        }
+        else {
+            thefile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
+            tempfile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
+        }
         if (mk.existsSync(thefile)) {
             await job.log(LogLevel.Info, thefile + " Alerady exists, not backing up");
         }
@@ -104,29 +131,29 @@ async function jobArrived(s, flowElement, job) {
                     let Propertysets1 = `<PropertySets>${propsets}</PropertySets>`;
                     let Propertysets = Propertysets1.replace(/>,</g, "><");
                     manifest = `<Manifest>
-                <ProductInfo>Switch Version 23</ProductInfo>
+                <ProductInfo>Switch Version ${SwitchVersionNumber}</ProductInfo>
                 <ExportFormatVersion>1.0</ExportFormatVersion>
                 <FlowFile>flow.xml</FlowFile>
                 <SwitchFlavour>Switch</SwitchFlavour>
-                <SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
+                <SwitchReleaseVersionNumber>${SwitchVersionNumber}</SwitchReleaseVersionNumber>
                 <SwitchReleaseType></SwitchReleaseType>
                 <SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
-                <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
-                <OperatingSystem>Windows</OperatingSystem>
+                <SwitchUpdateVersionNumber>${SwitchVersionUpdateNumber}</SwitchUpdateVersionNumber>
+                <OperatingSystem>${OperatingSystem}</OperatingSystem>
                 ${Propertysets}
                 </Manifest>`;
                 }
                 else {
                     manifest = `<Manifest>
-                <ProductInfo>Switch Version 23</ProductInfo>
+                <ProductInfo>Switch Version ${SwitchVersionNumber}</ProductInfo>
                 <ExportFormatVersion>1.0</ExportFormatVersion>
                 <FlowFile>flow.xml</FlowFile>
                 <SwitchFlavour>Switch</SwitchFlavour>
-                <SwitchReleaseVersionNumber>23</SwitchReleaseVersionNumber>
+                <SwitchReleaseVersionNumber>${SwitchVersionNumber}</SwitchReleaseVersionNumber>
                 <SwitchReleaseType></SwitchReleaseType>
                 <SwitchReleaseTypeNumber>0</SwitchReleaseTypeNumber>
-                <SwitchUpdateVersionNumber>100</SwitchUpdateVersionNumber>
-                <OperatingSystem>Windows</OperatingSystem>
+                <SwitchUpdateVersionNumber>${SwitchVersionUpdateNumber}</SwitchUpdateVersionNumber>
+                <OperatingSystem>${OperatingSystem}</OperatingSystem>
                 </Manifest>`;
                 }
                 await archive.append(flowxmlconvert, { name: "flow.xml" });
@@ -146,12 +173,13 @@ async function jobArrived(s, flowElement, job) {
             let subjob = await flowElement.createJob(newlocation);
             //remove exportder
             let heirarchyremoveexportder = heirarchy[i].replace(exportder + "/", "");
-            let heirarchyreplaceslash;
+            let heirarchyreplaceslasharray, heirarchyreplaceslash;
             if (heirarchyremoveexportder == exportder) {
                 heirarchyreplaceslash = "";
             }
             else {
-                heirarchyreplaceslash = heirarchyremoveexportder.replace(/\//g, ";");
+                heirarchyreplaceslasharray = heirarchyremoveexportder.replace(/\//g, ";");
+                heirarchyreplaceslash = heirarchyreplaceslasharray.split(";");
             }
             await job.log(LogLevel.Warning, "HIERARCHY: " + heirarchyreplaceslash);
             await subjob.setPrivateData("EnfocusSwitch.hierarchy", heirarchyreplaceslash);
