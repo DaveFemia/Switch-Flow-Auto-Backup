@@ -7,8 +7,8 @@
         <Keywords Editor="hide" Type="string"/>
         <Tooltip Editor="hide" Type="string"/>
         <IncomingConnections Editor="hide" RequireAtLeastOne="Yes">Yes</IncomingConnections>
-        <OutgoingConnections DetailedInfo="" Editor="hide" RequireAtLeastOne="Yes">One</OutgoingConnections>
-        <ConnectionType Editor="hide">Move</ConnectionType>
+        <OutgoingConnections DetailedInfo="" Editor="hide" RequireAtLeastOne="Yes">Unlimited</OutgoingConnections>
+        <ConnectionType Editor="hide">TrafficLight</ConnectionType>
         <FunctionsNodeJSScript Editor="hide"/>
         <ExecutionMode Editor="hide">Concurrent</ExecutionMode>
         <NumberOfSlots Editor="hide">Default</NumberOfSlots>
@@ -34,6 +34,9 @@
         <packages Default="" DetailedInfo="" Editor="inline" LocalizedTagName="Package Scripts" Subtype="" Tooltip="" Type="enum:Yes;No" UserDefined="true" Validation="Standard"></packages>
         <Output Default="" DetailedInfo="" Editor="inline" LocalizedTagName="Output" Subtype="" Tooltip="" Type="enum:Save backups to export directory;Output backups into flow;Both" UserDefined="true" Validation="Standard"></Output>
     </ElementFields>
-    <ConnectionFields/>
+    <ConnectionFields>
+        <Success AvailableFor="Data" Default="Yes" Editor="inline" LocalizedTagName="Success out" Type="bool">Yes</Success>
+        <Error AvailableFor="Data" Default="Yes" Editor="inline" LocalizedTagName="Error out" Type="bool">Yes</Error>
+    </ConnectionFields>
     <ExtraProperties/>
 </Object>

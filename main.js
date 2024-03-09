@@ -21,8 +21,27 @@ async function jobArrived(s, flowElement, job) {
     let flowpanexml = await fs.readFile(flowpane);
     let flowpanexmlconvert = await iconv.decode(flowpanexml, 'utf-8');
     let flowpanedoc = await new dom().parseFromString(flowpanexmlconvert, 'text/xml');
+    let statuserror = "good";
     //loop through flows directory
     for (let i = 0; i < dir.length; i++) {
+        async function testflowxml() {
+            try {
+                let xmlfile = await fs.readFile(flowxmls + "/" + dir[i]);
+                let flowxmlconvert = await iconv.decode(xmlfile, 'utf-8');
+                let flowdoc = await new dom().parseFromString(flowxmlconvert, 'text/xml');
+                let flowid = xpath.select1("//Data/@Id", flowdoc).value;
+                return "good";
+            }
+            catch (error) {
+                let status = "failed to read Flow.xml, please confirm you selected the correct flow xmls folder.";
+                return status;
+            }
+        }
+        let status = await testflowxml();
+        if (status != "good") {
+            statuserror = status;
+            break;
+        }
         let xmlfile = await fs.readFile(flowxmls + "/" + dir[i]);
         let flowxmlconvert = await iconv.decode(xmlfile, 'utf-8');
         let flowdoc = await new dom().parseFromString(flowxmlconvert, 'text/xml');
@@ -163,33 +182,41 @@ async function jobArrived(s, flowElement, job) {
             let archived = await archive();
         }
     }
-    await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + "DIRLENGTH: " + dir.length);
-    //"Save backups to export directory""Output backups into flow""Both"
-    await job.log(LogLevel.Warning, "OUTPUT PROP " + outputprop);
-    if (outputprop == "Both" || outputprop == "Output backups into flow") {
-        await job.log(LogLevel.Warning, "TEST INSIDE BOTH");
-        for (let i = 0; i < flowlist.length; i++) {
-            let newlocation = flowlist[i];
-            let subjob = await flowElement.createJob(newlocation);
-            //remove exportder
-            let heirarchyremoveexportder = heirarchy[i].replace(exportder + "/", "");
-            let heirarchyreplaceslasharray, heirarchyreplaceslash;
-            if (heirarchyremoveexportder == exportder) {
-                heirarchyreplaceslash = "";
-            }
-            else {
-                heirarchyreplaceslasharray = heirarchyremoveexportder.replace(/\//g, ";");
-                heirarchyreplaceslash = heirarchyreplaceslasharray.split(";");
-            }
-            await job.log(LogLevel.Warning, "HIERARCHY: " + heirarchyreplaceslash);
-            await subjob.setPrivateData("EnfocusSwitch.hierarchy", heirarchyreplaceslash);
-            await subjob.sendToSingle();
-            if (outputprop == "Output backups into flow") {
-                mk.unlinkSync(newlocation);
+    if (statuserror == "good") {
+        await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + "DIRLENGTH: " + dir.length);
+        //"Save backups to export directory""Output backups into flow""Both"
+        await job.log(LogLevel.Warning, "OUTPUT PROP " + outputprop);
+        if (outputprop == "Both" || outputprop == "Output backups into flow") {
+            await job.log(LogLevel.Warning, "TEST INSIDE BOTH");
+            for (let i = 0; i < flowlist.length; i++) {
+                let newlocation = flowlist[i];
+                let subjob = await flowElement.createJob(newlocation);
+                //remove exportder
+                let heirarchyremoveexportder = heirarchy[i].replace(exportder + "/", "");
+                let heirarchyreplaceslasharray, heirarchyreplaceslash;
+                if (heirarchyremoveexportder == exportder) {
+                    heirarchyreplaceslash = "";
+                }
+                else {
+                    heirarchyreplaceslasharray = heirarchyremoveexportder.replace(/\//g, ";");
+                    heirarchyreplaceslash = heirarchyreplaceslasharray.split(";");
+                }
+                await job.log(LogLevel.Warning, "HIERARCHY: " + heirarchyreplaceslash);
+                await subjob.setPrivateData("EnfocusSwitch.hierarchy", heirarchyreplaceslash);
+                // await subjob.sendToSingle()
+                await subjob.sendToData(Connection.Level.Success);
+                if (outputprop == "Output backups into flow") {
+                    mk.unlinkSync(newlocation);
+                }
+                await job.sendToNull();
             }
         }
     }
+    else {
+        await job.log(LogLevel.Error, statuserror);
+        await job.sendToData(Connection.Level.Error);
+    }
     // await job.setPrivateData("EnfocusSwitch.hierarchy", "C:/Temp")
-    await job.sendToNull();
+    // await job.sendToNull()
 }
 //# sourceMappingURL=main.js.map
