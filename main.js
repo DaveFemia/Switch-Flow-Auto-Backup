@@ -109,7 +109,7 @@ async function jobArrived(s, flowElement, job) {
             tempfile = exdir + "/Flow_" + flowid + "_" + flowname + "_v" + flowversion + ".sflow";
         }
         if (mk.existsSync(thefile)) {
-            await job.log(LogLevel.Info, thefile + " Alerady exists, not backing up");
+            await job.log(LogLevel.Info, thefile + " Already exists, not backing up");
         }
         else {
             for (let i = 0; i < flowversion; i++) {
