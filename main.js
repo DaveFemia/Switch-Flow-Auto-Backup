@@ -183,7 +183,7 @@ async function jobArrived(s, flowElement, job) {
         }
     }
     if (statuserror == "good") {
-        await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + "DIRLENGTH: " + dir.length);
+        await job.log(LogLevel.Warning, "Number of Flows: " + flowlist.length + " DIRLENGTH: " + dir.length);
         //"Save backups to export directory""Output backups into flow""Both"
         await job.log(LogLevel.Warning, "OUTPUT PROP " + outputprop);
         if (outputprop == "Both" || outputprop == "Output backups into flow") {
@@ -208,7 +208,11 @@ async function jobArrived(s, flowElement, job) {
                 if (outputprop == "Output backups into flow") {
                     mk.unlinkSync(newlocation);
                 }
-                await job.sendToNull();
+                // await job.sendToNull()
+                // await job.log(LogLevel.Warning, "loop num " + i + "flowlist " + flowlist.length)
+                if (i + 1 === flowlist.length) {
+                    await job.sendToNull();
+                }
             }
         }
     }

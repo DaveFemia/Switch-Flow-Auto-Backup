@@ -9,6 +9,6 @@
     <ScriptProgramFiles>
         <ScriptProgramFile ScriptLanguage="NodeJSScript">main.ts</ScriptProgramFile>
     </ScriptProgramFiles>
-    <ScriptIconFile></ScriptIconFile>
+    <ScriptIconFile>switch-flow-auto-backup.png</ScriptIconFile>
     <LocalizationItems/>
 </Manifest>
