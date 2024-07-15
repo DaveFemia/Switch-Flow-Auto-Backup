@@ -8,6 +8,9 @@ Allows you to backup your Enfocus Switch workflows with a single script. Group h
 
 New flow backups will only be generated if flows are altered and re-saved (So long as you keep them stored in the same export directory). This is accomplished by checking the version number in the specific flow.xml and comparing it to the version number in the previously exported file name.  Very useful for keeping overhead low and not re-packaging the same unaltered workflow repeatedly.  This feature also breaks if you select output property "Output backups into flow" as no workflows will be stored permanently in the export directory. The script will have no way of knowing what flow versions have been updated since the last run, so every time all flows will be output.
 
+**Note**
+I have added a packaged version of the script, if you would like to test out without having to download the whole source project feel free to grab that version.
+
 ## Properties
 ![Screenshot 2024-07-14 at 8 45 41 PM](https://github.com/user-attachments/assets/b24992cb-86e2-4c5b-9a82-4e3fad5deee5)
 
