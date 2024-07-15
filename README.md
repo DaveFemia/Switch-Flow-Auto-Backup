@@ -19,6 +19,8 @@ New flow backups will only be generated if flows are altered and re-saved (So lo
 
 **Package Scripts** - Dropdown (Yes/No) if Yes is selected any scripts used in your workflows will be backaged inside the exported workflow. Extremely helpful in instances where a server might suffer critical damage or in instances where you are migrating to a new server.  For local backups in cases where I might accidentally delete a workflow I also store backups without scripts packaged (to save on space) as scripts should be located where they are currently linked.
 
+**Output** - Dropdown list. "Output backups into flow","Save backups to export directory","Both".  Both and Output backups into flow will send backed up flows out the success traffic light path.  This is useful if you would like to backup your workflows off-site. (Both and Output backups into flow will also have hierarchy attached so if you end your flow with an "Archive Hierarchy" configurator your group structure will be maintained. Be sure to set your "subfolder levels" property in Archive Hierarchy to a number larger than the greatest amount of child groups any of your flows contains. Normally I set my subfolder levels to 5 just because my flows are generally not greater than 5 children deep.)
+
 
 ## Thanks
 This script is largely influenced by the study conducted by @open-automation in 2014 [Research on Enfocus Switch forums](https://forum.enfocus.com/viewtopic.php?t=1432)
