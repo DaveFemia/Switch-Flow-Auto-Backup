@@ -65,6 +65,9 @@ async function jobArrived(s, flowElement, job) {
         }
         let flowname = xpath.select("//FlowFolder", flowdoc)[0].firstChild.data;
         let object = xpath.select("//ScriptPackagePath", flowdoc);
+        let actions = xpath.select("//ActionList", flowdoc);
+        let profiles = xpath.select("//PDFprofile", flowdoc);
+        let variables = xpath.select("//VariableSet", flowdoc);
         let flow = "Flow=" + flowid;
         let query = "//Group[" + flow + "]/@Name";
         let exdir = exportder;
@@ -135,7 +138,76 @@ async function jobArrived(s, flowElement, job) {
                 if (packages == "Yes") {
                     let propsets = [];
                     let filename;
-                    if (object.length == 0) {
+                    await job.log(LogLevel.Warning, "Number of PDF profiles present: " + profiles.length);
+                    if (variables.length > 0) {
+                        for (let i = 0; i < variables.length; i++) {
+                            try {
+                                let fullPath = variables[i].firstChild.data;
+                                filename = fullPath.replace(/^.*[\\/]/, '');
+                                let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="${filename}" Path="${fullPath}"/>`;
+                                await archive.file(fullPath, { name: filename });
+                                propsets.push(intopro);
+                            }
+                            catch (error) {
+                                await job.log(LogLevel.Warning, "Pitstop configurator used but no VariableSet present");
+                            }
+                        }
+                    }
+                    if (profiles.length > 0) {
+                        for (let i = 0; i < profiles.length; i++) {
+                            try {
+                                let propfile = await fs.readFile(profiles[i].firstChild.data);
+                                let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="profile${i}/PropertySet" Path="${profiles[i].firstChild.data}"/>`;
+                                propsets.push(intopro);
+                                await archive.file(profiles[i].firstChild.data, { name: "profile" + i + "/PropertySet" });
+                                let propxmlconvert = await iconv.decode(propfile, 'utf-8');
+                                let propdoc = await new dom().parseFromString(propxmlconvert, 'text/xml');
+                                let profilesprop = xpath.select("//Path", propdoc);
+                                for (let b = 0; b < profilesprop.length; b++) {
+                                    let fullPath = profilesprop[b].firstChild.data;
+                                    filename = fullPath.replace(/^.*[\\/]/, '');
+                                    let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="${filename}" Path="${fullPath}"/>`;
+                                    await archive.file(fullPath, { name: filename });
+                                    propsets.push(intopro);
+                                }
+                            }
+                            catch (error) {
+                                await job.log(LogLevel.Warning, "Pitstop configurator used but no PDF profile present");
+                            }
+                        }
+                    }
+                    await job.log(LogLevel.Warning, "Number of actions present: " + actions.length);
+                    if (actions.length > 0) {
+                        for (let i = 0; i < actions.length; i++) {
+                            try {
+                                // await job.log(LogLevel.Warning, "first action: " + actions[i].firstChild.data)
+                                let propfile = await fs.readFile(actions[i].firstChild.data);
+                                let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="action${i}/PropertySet" Path="${actions[i].firstChild.data}"/>`;
+                                propsets.push(intopro);
+                                await archive.file(actions[i].firstChild.data, { name: "action" + i + "/PropertySet" });
+                                let propxmlconvert = await iconv.decode(propfile, 'utf-8');
+                                let propdoc = await new dom().parseFromString(propxmlconvert, 'text/xml');
+                                let actionsprop = xpath.select("//Path", propdoc);
+                                // await job.log(LogLevel.Warning, actionsprop[0].firstChild.data)
+                                for (let b = 0; b < actionsprop.length; b++) {
+                                    let fullPath = actionsprop[b].firstChild.data;
+                                    filename = fullPath.replace(/^.*[\\/]/, '');
+                                    let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="${filename}" Path="${fullPath}"/>`;
+                                    await archive.file(fullPath, { name: filename });
+                                    propsets.push(intopro);
+                                }
+                                // let fullPath = actionsprop[0].firstChild.data
+                                // filename = fullPath.replace(/^.*[\\/]/,'')
+                                // let intopro = `<PropertySet Plugin="" PropertyType="file" InternalPath="${filename}" Path="${fullPath}"/>`
+                                // await archive.file(fullPath, {name: filename})
+                                // propsets.push(intopro)
+                            }
+                            catch (error) {
+                                await job.log(LogLevel.Warning, "Pitstop configurator used but no action present");
+                            }
+                        }
+                    }
+                    if (object.length == 0 && actions.length == 0 && profiles.length == 0 && variables.length == 0) {
                         propsets = "";
                     }
                     else {
